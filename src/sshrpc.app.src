@@ -6,5 +6,5 @@
     {modules, [client_test, client_test_nonotp,
                server_test,
                sshrpc_client, sshrpc_subsystem]},
-    {applications, [kernel, stdlib]}
+    {applications, [kernel, stdlib, crypto, asn1, public_key, ssl]}
 ]}.
