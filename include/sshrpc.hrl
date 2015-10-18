@@ -18,6 +18,8 @@
 
 %% basic binary constructor
 %% see ssh.hrl in Erlang/OTP
--define(UINT32(X), X:32/unsigned-big-integer).
+-include_lib("ssh/src/ssh.hrl").
+
+%-define(UINT32(X), X:32/unsigned-big-integer).
 
 %% end of file

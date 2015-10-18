@@ -11,7 +11,8 @@ mk_opts(listen) ->
 mk_opts(connect) ->
     mk_opts("client");
 mk_opts(Role) when is_atom(Role) ->
-    Dir = filename:join([code:lib_dir(?APP), "examples", "certs", "etc"]),
+    Dir = filename:join([code:lib_dir(?APP), "certs", "etc"]),
+    ok = lager:info("function=mk_otps role=\"~s\" cert_base_dir=\"~s\"", [Role, Dir]),
     [{active, false}, 
      {verify, 2},
      {depth, 2},

@@ -18,9 +18,13 @@
 
 -module(sshrpc_subsystem).
 
--behaviour(ssh_channel).
+%-behaviour(ssh_channel).
+
+-behaviour(ssh_daemon_channel).
 
 -include("sshrpc.hrl").
+%-include_lib("ssh/src/ssh.hrl").
+
 
 %% ssh_channel callbacks
 -export([subsystem_spec/1]).
@@ -28,7 +32,7 @@
 
 %% state
 -record(state, {
-	  cm,
+	  connectmgr,
 	  channel,
 	  pending    % binary()
 	 }).
@@ -43,7 +47,8 @@
 -spec subsystem_spec(term()) -> {string(), {term(), term()}}.
 
 subsystem_spec(Options) ->
-        {"sshrpc@k2r.org", {?MODULE, Options}}.
+%        {"sshrpc@k2r.org", {?MODULE, Options}}.
+        {"sshrpc", {?MODULE, Options}}.
 
 %%====================================================================
 %% ssh_channel callbacks
@@ -58,6 +63,7 @@ subsystem_spec(Options) ->
 -spec init(term()) -> {ok, #state{}}.
 
 init(_Options) ->
+    debug(["init"]),
     {ok, #state{pending = <<>>}}.
 
 %%--------------------------------------------------------------------
@@ -76,28 +82,34 @@ code_change(_OldVsn, State, _Extra) ->
 handle_ssh_msg({ssh_cm, _ConnectionManager, 
 		{data, _ChannelId, 0, Data}}, 
 	       State) ->
+    debug(["handle_ssh_msg_data"]),
     State1 = handle_data(Data, State),
     {ok, State1};
 
 handle_ssh_msg({ssh_cm, _, {eof, ChannelId}}, State) ->
+    debug(["handle_ssh_msg_eof"]),
     {stop, ChannelId, State};
 
 handle_ssh_msg({ssh_cm, _, {signal, _, _}}, State) ->
     %% Ignore signals according to RFC 4254 section 6.9.
+    debug(["handle_ssh_msg_signal"]),
     {ok, State};
 
 handle_ssh_msg({ssh_cm, _, {exit_signal, ChannelId, _, Error, _}}, State) ->
     Report = io_lib:format("Connection closed by peer ~n Error ~p~n",
                            [Error]),
     error_logger:error_report(Report),
+    debug(["handle_ssh_msg_exit_signal"]),
     {stop, ChannelId, State};
 
 handle_ssh_msg({ssh_cm, _, {exit_status, ChannelId, 0}}, State) ->
+    debug(["handle_ssh_msg_exit_status"]),
     {stop, ChannelId, State};
 
 handle_ssh_msg({ssh_cm, _, {exit_status, ChannelId, Status}}, State) ->
     Report = io_lib:format("Connection closed by peer ~n Status ~p~n",
                            [Status]),
+    debug(["handle_ssh_msg_exit_closed_by_peer"]),
     error_logger:error_report(Report),
     {stop, ChannelId, State}.
 
@@ -107,9 +119,10 @@ handle_ssh_msg({ssh_cm, _, {exit_status, ChannelId, Status}}, State) ->
 %% Description: Handles other channel messages.
 %%--------------------------------------------------------------------
 handle_msg({ssh_channel_up, ChannelId, ConnectionManager}, State) ->
+    debug(["handle_msg_ssh_channel_up"]),
     {ok,  State#state{
 	    channel = ChannelId,
-	    cm = ConnectionManager}}.
+	    connectmgr = ConnectionManager}}.
 
 %%--------------------------------------------------------------------
 %% Function: terminate(Reason, State) -> void()
@@ -124,11 +137,12 @@ terminate(_Reason, _State) ->
 
 %% handling received data
 %% see ssh_sftpd.erl
-
+%% COMPILER WARNNING --sub binary is used to return. Potential leak?
 handle_data(<<?UINT32(Len), Msg:Len/binary, Rest/binary>>,
-	    #state{cm = ConnectionManager, 
+	    #state{connectmgr = ConnectionManager, 
 		   channel = ChannelId,
 		   pending = <<>>} = State) ->
+    debug(["handle_data"]),
     {Reply, Status} = exec_bin(Msg),
     Bin = term_to_binary({answer,{Reply, Status}}),
     Len = size(Bin),
@@ -160,6 +174,9 @@ exec_bin(Cmdbin) ->
 	Error -> 
 	    {{exec_error,Error}, -1}
     end.
+
+debug(M) -> io:format("[~p] DEBUG: event=~p~n", [?MODULE, M]).
+
 
 %% end of file
 

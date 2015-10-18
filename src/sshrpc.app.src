@@ -6,9 +6,9 @@
 
 
     ]},
-    {registered, []},
+    {registered, [sshrpc]},
     {modules, [client_test, client_test_nonotp,
-               server_test,
+               server_test, sshrpc_util, ssl_test_lib,
                sshrpc_client, sshrpc_subsystem]},
     {applications, [kernel, stdlib, crypto, asn1, public_key, ssl]}
 ]}.

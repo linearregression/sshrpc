@@ -76,8 +76,7 @@ start_channel(Host, Port, Opts) ->
     Timeout = proplists:get_value(timeout, Opts, infinity),
     case connect(Host, Port, proplists:delete(timeout, Opts)) of
 	{ok, ChannelId, Cm} ->
-	    case ssh_channel:start(Cm, ChannelId, ?MODULE, [Cm, 
-							    ChannelId, Timeout]) of
+	    case ssh_channel:start(Cm, ChannelId, ?MODULE, [Cm, ChannelId, Timeout]) of
 		{ok, Pid} ->
 		    {ok, Pid, Cm};
 		{error, Reason} ->
@@ -86,6 +85,7 @@ start_channel(Host, Port, Opts) ->
 		    {error, ignore}
 	    end;
 	Error ->
+
 	    Error	    
     end.
 

@@ -17,21 +17,41 @@
 %% @doc example code for testing SSH RPC server site
 
 -module(server_test).
--export([startup/0, invoke/0]).
+-export([invoke/0, start/0, start/1]).
+
+-include("common.hrl").
 
 -define(TIMEOUT, 30000). % in milliseconds
 
 %% specify server configuration key directory
 %% (put id_rsa.pub, ssh_host_rsa_key{.pub}, and authorized_keys
 
--define(SERVER_CONFIG,
-	"/your/server_config").
+%-define(SERVER_CONFIG,
+%	"/your/server_config").
 
-startup() ->
-    ok = crypto:start(),
-    ok = ssh:start().
+%%--------------------------------------------------------------------
+-spec start() -> ok | {error, term()}.
+-spec start(permanent | transient | temporary) -> ok | {error, term()}.
+%%
+%% Description: Starts the ssh application. Default type
+%% is temporary. see application(3)
+%%--------------------------------------------------------------------
+start() ->
+    application:start(crypto),
+    application:start(asn1),
+    application:start(public_key),
+    application:start(ssh),
+    application:start(sasl).
+
+start(Type) ->
+    application:start(crypto, Type),
+    application:start(asn1),
+    application:start(public_key, Type),
+    application:start(ssh, Type),
+    application:start(sasl, Type).
 
 invoke() ->
+    %Opts = sshrpc_util:mk_opts('listen'), 
     Pid = ssh:daemon({127,0,0,1}, % IP address
 		     11122, % port number
 		     [
@@ -45,7 +65,7 @@ invoke() ->
 		      {user_dir, ?SERVER_CONFIG},
 		      %%
 		      %% for subsystem test
-		      {subsystems,[sshrpc_subsystem:subsystem_spec([])]},
+		      %%{subsystems,[sshrpc_subsystem:subsystem_spec([])]},
 		      %%
 		      %% the following user/password pair list of
 		      %% user_password needed for
@@ -55,7 +75,10 @@ invoke() ->
 		      %%
 		      %% nodelay option required for faster immediate response!
 		      %%
-		      {nodelay, true}
+		      {auth_methods, "publickey"},
+		      {nodelay, true},
+ 		      {ssh_msg_debug_fun, 
+		      	   fun(_,true,M,_)-> io:format("DEBUG: ~p~n", [M]) end}
 		     ]),
     Pid.
 
