@@ -19,3 +19,6 @@ This code is licensed under [Erlang Public License 1.1](http://www.erlang.org/EP
 * Erlang Solutions for allowing putting my Erlang Factory slides as a part of this distribution
 
 * NSIRG, NICT, Japan
+
+Reference:
+http://www.erlang.org/doc/apps/ssh/using_ssh.html
