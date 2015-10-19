@@ -1,14 +1,62 @@
-{application, sshrpc, [
-    {description, "SSH RPC for Erlang"},
+%%% -*-mode:erlang;coding:utf-8;tab-width:4;c-basic-offset:4;indent-tabs-mode:()-*-
+%%% ex: set ft=erlang fenc=utf-8 sts=4 ts=4 sw=4 et:
+%%%
+{application, sshrpc,
+    [{description, "An Erlang SSH RPC library frontend for gen_rpc"},
     {vsn, "0.0.1"},
-    {env, [
-
-
+    {mod, {sshrpc_app, []}},
+    {registered, []},
+    {applications, [kernel, stdlib, lager, crypto, asn1, public_key, ssl]},
+    {env,[
+        %% Client connect timeout
+        {connect_timeout, 5000},
+        %% Client and Server send timeout
+        {send_timeout, 5000},
+        %% Default receive timeout for call() functions
+        {receive_timeout, 15000},
+        %% Inactivity timeout for client gen_server
+        {client_inactivity_timeout, infinity},
+        %% Inactivity timeout for server gen_server
+        {server_inactivity_timeout, infinity},
+	    %% The following are for ssh
+	    %% Test host ip
+	    {host , {127,0,0,1}},
+	    %% Test custom ssh port
+	    {port, 11122},
+	    %% ssh authenticatio mehod see erlang otp doc
+		{auth_methods, "publickey"},
+		%% server configuration directory
+		%% including the host keys
+	    {system_dir, "/etc/ssh"},
+		%% note: public user key (authorized_keys) must exist
+		%% in the following *user* directory for public-key auth
+		%% NOTE WELL: user key has NULL password protected
+		%%            (password-protected key not tested yet)
+	    {user_dir, "/root/.ssh"},
+	    %% ssh key negotiation handler
+	    {key_cb, key_handler},
+	    %% ssh subsystem. Decode and relay to underlying gen_rpc.
+	    {subsystems,[{"gs_ssh_daemon_channel",{gs_ssh_daemon_channel,[]}}]},
+	    {ssh_cli, no_cli},
+	    %% nodelay option required for faster immediate response!
+		{nodelay, true}
+	    %% custom debug function for ssh tracing
+%		{ssh_msg_debug_fun, 
+%		      	   fun(_,true,M,_)-> io:format("DEBUG: ~p~n", [M]) end}
 
     ]},
-    {registered, [sshrpc]},
-    {modules, [client_test, client_test_nonotp,
-               server_test, sshrpc_util, ssl_test_lib,
-               sshrpc_client, sshrpc_subsystem]},
-    {applications, [kernel, stdlib, crypto, asn1, public_key, ssl]}
+    {modules, [client_test,
+               client_test_nonotp,
+               server_test,
+               sshrpc_util,
+               ssl_test_lib,
+               sshrpc_client,
+               sshrpc_subsystem
+    ]}
 ]}.
+
+
+
+
+
+
