@@ -12,7 +12,7 @@ cache:
   - $HOME/.cache/rebar3
   - _plt
 install: "true"
-script: "make"
+script: "rebar3 compile"
 branches:
   only:
     - master
