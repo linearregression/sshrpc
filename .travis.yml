@@ -16,3 +16,4 @@ script: "rebar3 compile"
 branches:
   only:
     - master
+    - makethiswork
